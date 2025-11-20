@@ -68,6 +68,7 @@ app.set("view engine", "ejs");
 app.use((req, res, next) => {
     if (req.session.patientName) {
         res.locals.name = req.session.patientName;
+        
     }
   
     next();
@@ -153,6 +154,11 @@ app.get("/patientVerify", async (req, res) => {
   }
 });
 
+app.post("/sendAppointment", (req, res) => {
+  res.send("Appointment sent successfully to mail!");
+});
+
+
 app.use('/patientPage',patientRouter);
 
 app.use("/adminPage", adminRouter);
@@ -168,6 +174,7 @@ app.get("/doctorLogin", (req, res) => {
 app.use("/doctor", doctorRouter);
 
 app.use("/mediAI", mediAI);
+
 // Server listen
 app.listen(PORT, () =>
   console.log(`🚀 Server running on http://localhost:${PORT}`),

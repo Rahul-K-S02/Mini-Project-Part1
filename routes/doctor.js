@@ -5,6 +5,7 @@ import { appointment } from "../models/appointment.js";
 import generateCode from "../services/uniqueID.js";
 import multer from "multer";
 import { v2 as cloudinary } from "cloudinary";
+import { sendAppointmentConfirmationEmail } from '../services/emailService.js'; // Adjust path as needed
 
 const doctorRouter = Router();
 
@@ -248,12 +249,29 @@ doctorRouter.get("/appointments", isDoctorLoggedIn, async (req, res) => {
   }
 });
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 // Confirm Appointment
 doctorRouter.post("/appointments/:appointmentId/confirm", isDoctorLoggedIn, async (req, res) => {
   try {
     const { appointmentId } = req.params;
     const { timeSlot, appointmentDate, confirmationMessage } = req.body;
     const doctorId = req.session.doctorId;
+    
+    console.log("Confirming appointment:", appointmentId, timeSlot, appointmentDate);
 
     // Find appointment and verify it belongs to this doctor
     const foundAppointment = await appointment.findOne({
@@ -277,13 +295,29 @@ doctorRouter.post("/appointments/:appointmentId/confirm", isDoctorLoggedIn, asyn
     
     await foundAppointment.save();
 
-    // TODO: Send notification to patient (email/SMS)
-    // For now, we'll just return success
+    // Send email notification to patient
+    try {
+      // Get doctor details for the email
+      const doctorDetails = await getDoctorById(doctorId); // You need to implement this function
+      
+      const emailResult = await sendAppointmentConfirmationEmail(foundAppointment, doctorDetails);
+      
+      if (emailResult.success) {
+        console.log("Appointment confirmation email sent successfully to:", foundAppointment.patientEmail);
+      } else {
+        console.error("Failed to send appointment confirmation email:", emailResult.error);
+        // Don't fail the whole request if email fails, just log it
+      }
+    } catch (emailError) {
+      console.error("Error in email sending process:", emailError);
+      // Continue with the response even if email fails
+    }
 
     res.json({
       success: true,
       message: "Appointment confirmed successfully. Patient will be notified.",
       appointment: foundAppointment,
+      emailSent: true // You can modify this based on actual email result
     });
   } catch (error) {
     console.error("Appointment confirmation error:", error);
@@ -293,6 +327,28 @@ doctorRouter.post("/appointments/:appointmentId/confirm", isDoctorLoggedIn, asyn
     });
   }
 });
+
+// Helper function to get doctor details (you need to implement this based on your doctor model)
+async function getDoctorById(doctorId) {
+  try {
+    // Replace this with your actual doctor model and query
+    // Assuming you have a Doctor model
+    const Doctor = mongoose.model('Doctor'); // Adjust based on your model name
+    const doctor = await Doctor.findOne({ doctorid: doctorId });
+    return doctor;
+  } catch (error) {
+    console.error("Error fetching doctor details:", error);
+    return null;
+  }
+}
+
+
+
+
+
+
+
+
 
 // Logout
 doctorRouter.post("/logout", (req, res) => {

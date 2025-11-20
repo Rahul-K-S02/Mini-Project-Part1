@@ -286,9 +286,10 @@
             document.getElementById('confirmForm').reset();
         }
 
-        // Confirm Appointment Form
+        // Confirm Appointment Form - Modified to redirect to /sendAppointment
         document.getElementById('confirmForm').addEventListener('submit', async function(e) {
             e.preventDefault();
+            
             const appointmentId = document.getElementById('confirmAppointmentId').value;
             const formData = {
                 timeSlot: document.getElementById('timeSlot').value,
@@ -297,6 +298,7 @@
             };
 
             try {
+                // First, confirm the appointment in the system
                 const response = await fetch(`/doctor/appointments/${appointmentId}/confirm`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -305,9 +307,9 @@
 
                 const data = await response.json();
                 if (data.success) {
-                    alert('Appointment confirmed successfully!');
-                    closeConfirmModal();
-                    location.reload();
+                    // After successful confirmation, redirect to /sendAppointment
+                    // with all appointment data
+                    redirectToSendAppointment(appointmentId, formData);
                 } else {
                     alert('Error confirming appointment: ' + data.message);
                 }
@@ -315,6 +317,63 @@
                 alert('Error confirming appointment');
             }
         });
+
+        // Function to redirect to /sendAppointment with appointment data
+        function redirectToSendAppointment(appointmentId, confirmationData) {
+            // Create a form to submit the data
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = '/sendAppointment';
+            
+            // Add appointment ID
+            const appointmentIdInput = document.createElement('input');
+            appointmentIdInput.type = 'hidden';
+            appointmentIdInput.name = 'appointmentId';
+            appointmentIdInput.value = appointmentId;
+            form.appendChild(appointmentIdInput);
+            
+            // Add confirmation data
+            Object.keys(confirmationData).forEach(key => {
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = key;
+                input.value = confirmationData[key];
+                form.appendChild(input);
+            });
+            
+            // Add doctor information
+            const doctorNameInput = document.createElement('input');
+            doctorNameInput.type = 'hidden';
+            doctorNameInput.name = 'doctorName';
+            doctorNameInput.value = '<%= doctor.name %>';
+            form.appendChild(doctorNameInput);
+            
+            const doctorEmailInput = document.createElement('input');
+            doctorEmailInput.type = 'hidden';
+            doctorEmailInput.name = 'doctorEmail';
+            doctorEmailInput.value = '<%= doctor.email %>';
+            form.appendChild(doctorEmailInput);
+            
+            // Submit the form
+            document.body.appendChild(form);
+            form.submit();
+        }
+
+        // Alternative approach using URL parameters (if you prefer GET method)
+        function redirectToSendAppointmentAlternative(appointmentId, confirmationData) {
+            // Construct URL with all necessary data as query parameters
+            const params = new URLSearchParams({
+                appointmentId: appointmentId,
+                timeSlot: confirmationData.timeSlot,
+                appointmentDate: confirmationData.appointmentDate,
+                confirmationMessage: confirmationData.confirmationMessage || '',
+                doctorName: '<%= doctor.name %>',
+                doctorEmail: '<%= doctor.email %>'
+            });
+            
+            // Redirect to /sendAppointment with all data
+            window.location.href = `/sendAppointment?${params.toString()}`;
+        }
 
         // Logout
         async function handleLogout() {
@@ -333,4 +392,3 @@
     </script>
 </body>
 </html>
-

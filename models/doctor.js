@@ -45,4 +45,7 @@ const doctorSchema = new mongoose.Schema({
   }
 });
 
+console.log("Database created");
+
+
 export const doctor = mongoose.model("doctor", doctorSchema);
